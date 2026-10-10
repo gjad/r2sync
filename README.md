@@ -41,7 +41,7 @@ terminal.exe
 '''                              # one file name per line; matches in every subdirectory
 ```
 
-Use TOML literal multi-line strings (`'''`) so Windows backslashes are kept as written. `exclude_dirs` entries may also be absolute paths inside `local_dir`.
+Use TOML literal multi-line strings (`'''`) so Windows backslashes are kept as written. `exclude_dirs` entries may also be absolute paths inside `local_dir`, and support wildcards: `*` matches any characters (including across subdirectories) and `?` matches one character. A leading `*\` matches at any depth, including the root, so `*\logs` excludes `logs`, `a\logs` and `a\b\logs` (but not `mylogs`).
 
 `name` must be unique. `local_dir` is the local root; `remote_prefix` is the R2 key prefix (use `""` for the bucket root). Paths in TOML can use forward slashes on Windows. `mode` accepts `copy` or `sync`:
 

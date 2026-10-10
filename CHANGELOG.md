@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Added
+
+- `exclude_dirs` now supports `*` and `?` wildcards; a leading `*\` matches at any depth, e.g. `*\tester`, `*\logs`.
+
 ## 0.3.0
 
 ### Added

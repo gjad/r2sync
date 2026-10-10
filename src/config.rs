@@ -30,7 +30,7 @@ pub struct SyncMapping {
     #[serde(default)]
     pub exclude_extensions: String,
     /// Directories to skip (including all subdirectories), one per line, relative to
-    /// `local_dir`, e.g. `\file\logs`.
+    /// `local_dir`, e.g. `\file\logs`. `*` and `?` wildcards are supported, e.g. `*\logs`.
     #[serde(default)]
     pub exclude_dirs: String,
     /// File names to skip in any directory, one per line, e.g. `terminal.exe`.
@@ -63,9 +63,19 @@ impl SyncMapping {
             return true;
         }
         let key = relative_key.to_lowercase();
+        let segments = key.split('/').collect::<Vec<_>>();
         self.exclude_dirs.lines().any(|line| {
             let dir = self.normalize_dir(line);
-            !dir.is_empty() && (key == dir || key.starts_with(&format!("{dir}/")))
+            if dir.is_empty() {
+                return false;
+            }
+            // A leading `*/` also matches at the root, so `*\logs` covers `logs` and `a/b/logs`.
+            let rooted = dir.strip_prefix("*/");
+            (1..=segments.len()).any(|count| {
+                let prefix = segments[..count].join("/");
+                wildcard_match(&dir, &prefix)
+                    || rooted.is_some_and(|rest| wildcard_match(rest, &prefix))
+            })
         })
     }
 
@@ -85,6 +95,33 @@ impl SyncMapping {
         };
         dir.trim_matches('/').to_owned()
     }
+}
+
+/// Matches `text` against `pattern`, where `*` matches any run of characters (including `/`)
+/// and `?` matches one character other than `/`.
+fn wildcard_match(pattern: &str, text: &str) -> bool {
+    let pattern = pattern.chars().collect::<Vec<_>>();
+    let text = text.chars().collect::<Vec<_>>();
+    let (mut p, mut t) = (0, 0);
+    let mut star: Option<(usize, usize)> = None;
+    while t < text.len() {
+        if p < pattern.len() && pattern[p] == '*' {
+            star = Some((p, t));
+            p += 1;
+        } else if p < pattern.len()
+            && (pattern[p] == text[t] || (pattern[p] == '?' && text[t] != '/'))
+        {
+            p += 1;
+            t += 1;
+        } else if let Some((star_p, star_t)) = star {
+            p = star_p + 1;
+            t = star_t + 1;
+            star = Some((star_p, star_t + 1));
+        } else {
+            return false;
+        }
+    }
+    pattern[p..].iter().all(|&c| c == '*')
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -259,5 +296,28 @@ terminal.exe
         assert!(mapping.is_excluded("terminal.exe"));
         assert!(mapping.is_excluded("a/b/Terminal.exe"));
         assert!(!mapping.is_excluded("a/terminal.exe.bak"));
+    }
+
+    #[test]
+    fn exclude_dirs_supports_wildcards() {
+        let mapping: SyncMapping = toml::from_str(
+            "name = 'x'
+local_dir = 'D:/Data'
+mode = 'copy'
+exclude_dirs = '''
+*\\tester
+*\\logs
+data\\bak*
+'''",
+        )
+        .unwrap();
+        assert!(mapping.is_excluded("a/tester/x.txt"));
+        assert!(mapping.is_excluded("a/b/Tester/c/x.txt"));
+        assert!(mapping.is_excluded("tester/x.txt"));
+        assert!(mapping.is_excluded("a/logs/x.txt"));
+        assert!(!mapping.is_excluded("a/tester2/x.txt"));
+        assert!(!mapping.is_excluded("a/mytester/x.txt"));
+        assert!(mapping.is_excluded("data/bak2024/x.txt"));
+        assert!(!mapping.is_excluded("other/data/bak/x.txt"));
     }
 }

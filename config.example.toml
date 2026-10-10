@@ -20,10 +20,11 @@ mode = "copy"
 # Optional: file extensions to skip, separated by "|" (case-insensitive, no dot). Applies to files in all subdirectories, local and remote.
 # exclude_extensions = "tmp|png"
 # Optional: directories to skip including all subdirectories, one per line, relative to local_dir.
+# Wildcards: * matches any characters, ? one character; "*\logs" matches a logs directory at any depth.
 # Use a literal multi-line string (''') so backslashes are kept as-is.
 # exclude_dirs = '''
 # \file\logs
-# \cache
+# *\tester
 # '''
 # Optional: file names to skip in any directory (including subdirectories), one per line.
 # exclude_files = '''
