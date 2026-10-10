@@ -1,0 +1,9 @@
+[build]
+target = "x86_64-win7-windows-msvc"
+target-dir = "target/win7-msvc-static"
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[target.x86_64-win7-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

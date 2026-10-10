@@ -1,0 +1,4 @@
+/target/
+/config.toml
+.r2sync-state/
+*.log

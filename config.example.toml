@@ -1,0 +1,19 @@
+# Cloudflare R2 S3-compatible endpoint, e.g. https://<account-id>.r2.cloudflarestorage.com
+endpoint = ""
+bucket = ""
+region = "auto"
+
+# Prefer environment variables to storing secrets in this file.
+access_key_id = ""
+secret_access_key = ""
+
+# mode = "copy": incremental one-way copy from local_dir to remote_prefix; does not delete remote-only files.
+# mode = "sync": two-way sync; transfers changes either way and reports conflicts without overwriting.
+# Deletions are not propagated by default; preview --delete-remote/--delete-local with --dry-run.
+# Run `r2sync.exe watch` to monitor the configured local directories continuously.
+# Define as many local/remote directory mappings as needed.
+[[syncs]]
+name = "documents"
+local_dir = "D:/Data/Documents"
+remote_prefix = "documents"
+mode = "copy"

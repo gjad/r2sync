@@ -1,0 +1,26 @@
+[package]
+name = "r2sync"
+version = "0.1.0"
+edition = "2021"
+description = "A small Cloudflare R2 sync CLI with AWS Signature Version 4"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["alloc"] }
+clap = { version = "4", features = ["derive"] }
+hex = "0.4"
+futures-util = "0.3"
+hmac = "0.12"
+notify = "6"
+percent-encoding = "2"
+quick-xml = { version = "0.37", features = ["serialize"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "io-util", "signal", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["io"] }
+toml = "0.8"
+walkdir = "2"
+
