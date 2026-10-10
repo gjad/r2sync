@@ -57,6 +57,9 @@ pub async fn run_mapping(
         if entry.file_type().is_file() {
             let relative = entry.path().strip_prefix(&mapping.local_dir)?;
             let key = relative.to_string_lossy().replace('\\', "/");
+            if mapping.is_excluded(&key) {
+                continue;
+            }
             local_files.insert(key, entry.path().to_path_buf());
         }
     }
@@ -81,7 +84,7 @@ pub async fn run_mapping(
                 eprintln!("Ignoring unsafe remote object key: {}", object.key);
                 return None;
             }
-            (!relative.is_empty()).then_some((relative, object))
+            (!relative.is_empty() && !mapping.is_excluded(&relative)).then_some((relative, object))
         })
         .collect::<BTreeMap<_, _>>();
 

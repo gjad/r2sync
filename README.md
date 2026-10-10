@@ -28,6 +28,8 @@ remote_prefix = "documents"
 mode = "copy"
 ```
 
+Optionally add `exclude_extensions = "tmp|png"` to a `[[syncs]]` table to skip files with those extensions (separated by `|`, case-insensitive). Excluded files are neither uploaded, downloaded, nor deleted.
+
 `name` must be unique. `local_dir` is the local root; `remote_prefix` is the R2 key prefix (use `""` for the bucket root). Paths in TOML can use forward slashes on Windows. `mode` accepts `copy` or `sync`:
 
 - `copy`: incremental one-way copy from `local_dir` to `remote_prefix`. New and changed local files are uploaded, remote-only files are kept. On the first run, if a matching remote key already exists, its contents are streamed and SHA-256 compared; identical files are skipped and differing files are uploaded. This avoids redundant PUTs but reads each pre-existing remote object once, which can take time for large files. Later runs use the local SHA-256 and remote ETag manifest stored under `.r2sync-state` next to the config file.

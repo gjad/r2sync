@@ -26,6 +26,23 @@ pub struct SyncMapping {
     #[serde(default)]
     pub remote_prefix: String,
     pub mode: SyncMode,
+    /// File extensions to skip, separated by `|`, e.g. `tmp|png`.
+    #[serde(default)]
+    pub exclude_extensions: String,
+}
+
+impl SyncMapping {
+    /// Returns true if the file name's extension is in `exclude_extensions` (case-insensitive).
+    pub fn is_excluded(&self, relative_key: &str) -> bool {
+        let file_name = relative_key.rsplit('/').next().unwrap_or(relative_key);
+        let Some((_, extension)) = file_name.rsplit_once('.') else {
+            return false;
+        };
+        self.exclude_extensions
+            .split('|')
+            .map(|item| item.trim().trim_start_matches("*.").trim_start_matches('.'))
+            .any(|item| !item.is_empty() && item.eq_ignore_ascii_case(extension))
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -122,7 +139,7 @@ access_key_id = \"\"\nsecret_access_key = \"\"\n\
 # Deletions are not propagated by default; preview --delete-remote/--delete-local with --dry-run.\n\
 # Add one [[syncs]] block for each local/remote directory pair. Uncomment and edit this example.\n\
 # [[syncs]]\n# name = \"documents\"\n# local_dir = \"D:/Data/Documents\"\n\
-# remote_prefix = \"documents\"\n# mode = \"copy\"\n";
+# remote_prefix = \"documents\"\n# mode = \"copy\"\n# exclude_extensions = \"tmp|png\"\n";
     fs::write(&path, template).with_context(|| format!("write config {}", path.display()))?;
     Ok(path)
 }
@@ -158,5 +175,21 @@ mode = 'incremental_upload'",
         )
         .unwrap();
         assert_eq!(legacy.mode, SyncMode::IncrementalUpload);
+    }
+
+    #[test]
+    fn excludes_configured_extensions() {
+        let mapping: SyncMapping = toml::from_str(
+            "name = 'x'
+local_dir = 'D:/Data'
+mode = 'copy'
+exclude_extensions = 'tmp| .PNG '",
+        )
+        .unwrap();
+        assert!(mapping.is_excluded("a/b.tmp"));
+        assert!(mapping.is_excluded("pic.png"));
+        assert!(!mapping.is_excluded("a.tmp/readme"));
+        assert!(!mapping.is_excluded("doc.txt"));
+        assert!(!mapping.is_excluded("tmp"));
     }
 }

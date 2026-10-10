@@ -17,3 +17,5 @@ name = "documents"
 local_dir = "D:/Data/Documents"
 remote_prefix = "documents"
 mode = "copy"
+# Optional: file extensions to skip, separated by "|" (case-insensitive, no dot). Applies to local and remote files.
+# exclude_extensions = "tmp|png"
