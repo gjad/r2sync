@@ -56,6 +56,12 @@ Other commands: `r2sync upload <file> [--key <object-key>] [--dry-run]`, `r2sync
 
 Uploads use single-part S3 PUT operations (up to the S3 single-PUT limit); multipart upload/resume is not implemented. Symlinks are not followed. Requests retry up to three times after transport errors and server-side 5xx responses.
 
+## Backup
+
+`r2sync backup` (optionally `--mapping <name>` and `--dry-run`) is a one-shot command that zips every valid file of each mapping (all exclusion rules apply) and uploads the archive to `<remote_prefix>/<mapping>.zip`, overwriting the previous backup.
+
+A SHA-256 index of the archived files is kept beside `config.toml` in `<SHA-256 of config.toml>.json`, so editing the config starts a new index. On the first run (no index entry) a full archive is uploaded and the index is written. On later runs the current files are compared with the index; if nothing was added, removed or changed, nothing is uploaded, otherwise a new archive is made and uploaded. The index is updated only after a successful upload.
+
 ## Build
 
 The project pins the nightly Rust toolchain and sets the legacy Windows target as Cargo's default. Install Visual Studio C++ Build Tools once, then the normal command `cargo build --release` produces `target/win7-msvc-static/x86_64-win7-windows-msvc/release/r2sync.exe`. The build configuration compiles Rust's standard library for the Windows 7 API baseline and statically links the MSVC CRT. `cargo test` and `cargo clippy --all-targets -- -D warnings` also use that target.

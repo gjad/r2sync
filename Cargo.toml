@@ -1,6 +1,6 @@
 [package]
 name = "r2sync"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
 description = "A small Cloudflare R2 sync CLI with AWS Signature Version 4"
 license = "MIT"
@@ -23,4 +23,5 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "io-util
 tokio-util = { version = "0.7", features = ["io"] }
 toml = "0.8"
 walkdir = "2"
+zip = { version = "9.0.1", default-features = false, features = ["deflate"] }
 

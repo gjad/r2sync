@@ -454,7 +454,7 @@ async fn download_and_remember(
     Ok(())
 }
 
-fn object_key(prefix: &str, relative: &str) -> String {
+pub fn object_key(prefix: &str, relative: &str) -> String {
     let prefix = prefix.trim_matches('/');
     if prefix.is_empty() {
         relative.to_owned()
@@ -476,7 +476,7 @@ fn is_safe_relative_key(key: &str) -> bool {
             .all(|part| !part.is_empty() && part != "." && part != "..")
 }
 
-fn hash_file(path: &Path) -> Result<String> {
+pub fn hash_file(path: &Path) -> Result<String> {
     let mut file = File::open(path).with_context(|| format!("open {}", path.display()))?;
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 64 * 1024];

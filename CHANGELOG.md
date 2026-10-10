@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- `r2sync backup`: one-shot zip backup per mapping using the existing exclusion rules; a SHA-256 index named after the config file hash decides whether anything changed since the last backup.
+
 ## 0.3.1
 
 ### Added

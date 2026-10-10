@@ -1,3 +1,4 @@
+mod backup;
 mod config;
 mod s3;
 mod sync;
@@ -58,6 +59,13 @@ enum Command {
     Watch {
         #[arg(long, help = "Watch only this named config mapping")]
         mapping: Option<String>,
+    },
+    /// One-shot zip backup of each mapping's valid files to R2; skipped when nothing changed
+    Backup {
+        #[arg(long, help = "Back up only this named config mapping")]
+        mapping: Option<String>,
+        #[arg(long, help = "Show whether a backup would be made without uploading")]
+        dry_run: bool,
     },
     /// Upload one local file
     Upload {
@@ -170,6 +178,27 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|| Path::new("."))
                 .join(".r2sync-state");
             watch_mappings(&client, &mappings, &state_dir).await?;
+        }
+        Command::Backup { mapping, dry_run } => {
+            let mappings = configuration
+                .syncs
+                .iter()
+                .filter(|target| match mapping.as_ref() {
+                    Some(name) => &target.name == name,
+                    None => true,
+                })
+                .collect::<Vec<_>>();
+            if mappings.is_empty() {
+                anyhow::bail!(
+                    "no sync mappings found; add [[syncs]] entries to {}",
+                    config_path.display()
+                );
+            }
+            let index_path = config_path
+                .parent()
+                .unwrap_or_else(|| Path::new("."))
+                .join(format!("{}.json", backup::config_hash(&config_path)?));
+            backup::run(&client, &mappings, &index_path, dry_run).await?;
         }
         Command::Upload {
             local_file,
