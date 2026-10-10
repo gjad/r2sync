@@ -29,19 +29,61 @@ pub struct SyncMapping {
     /// File extensions to skip, separated by `|`, e.g. `tmp|png`.
     #[serde(default)]
     pub exclude_extensions: String,
+    /// Directories to skip (including all subdirectories), one per line, relative to
+    /// `local_dir`, e.g. `\file\logs`.
+    #[serde(default)]
+    pub exclude_dirs: String,
+    /// File names to skip in any directory, one per line, e.g. `terminal.exe`.
+    #[serde(default)]
+    pub exclude_files: String,
 }
 
 impl SyncMapping {
-    /// Returns true if the file name's extension is in `exclude_extensions` (case-insensitive).
+    /// Returns true if a file (path relative to `local_dir`, using `/`) matches any exclusion
+    /// rule. Extension and file-name rules apply in every subdirectory; directory rules cover
+    /// the directory and everything below it. All matching is case-insensitive.
     pub fn is_excluded(&self, relative_key: &str) -> bool {
         let file_name = relative_key.rsplit('/').next().unwrap_or(relative_key);
-        let Some((_, extension)) = file_name.rsplit_once('.') else {
-            return false;
+        if let Some((_, extension)) = file_name.rsplit_once('.') {
+            if self
+                .exclude_extensions
+                .split('|')
+                .map(|item| item.trim().trim_start_matches("*.").trim_start_matches('.'))
+                .any(|item| !item.is_empty() && item.eq_ignore_ascii_case(extension))
+            {
+                return true;
+            }
+        }
+        if self
+            .exclude_files
+            .lines()
+            .map(str::trim)
+            .any(|item| !item.is_empty() && item.eq_ignore_ascii_case(file_name))
+        {
+            return true;
+        }
+        let key = relative_key.to_lowercase();
+        self.exclude_dirs.lines().any(|line| {
+            let dir = self.normalize_dir(line);
+            !dir.is_empty() && (key == dir || key.starts_with(&format!("{dir}/")))
+        })
+    }
+
+    /// Normalizes a configured directory to a lowercase, `/`-separated path relative to
+    /// `local_dir`. An absolute path inside `local_dir` is also accepted.
+    fn normalize_dir(&self, line: &str) -> String {
+        let dir = line.trim().replace('\\', "/").to_lowercase();
+        let root = self
+            .local_dir
+            .to_string_lossy()
+            .replace('\\', "/")
+            .trim_end_matches('/')
+            .to_lowercase();
+        let dir = match dir.strip_prefix(&format!("{root}/")) {
+            Some(rest) if !root.is_empty() => rest,
+            _ => dir.as_str(),
         };
-        self.exclude_extensions
-            .split('|')
-            .map(|item| item.trim().trim_start_matches("*.").trim_start_matches('.'))
-            .any(|item| !item.is_empty() && item.eq_ignore_ascii_case(extension))
+        dir.trim_matches('/').to_owned()
     }
 }
 
@@ -139,7 +181,8 @@ access_key_id = \"\"\nsecret_access_key = \"\"\n\
 # Deletions are not propagated by default; preview --delete-remote/--delete-local with --dry-run.\n\
 # Add one [[syncs]] block for each local/remote directory pair. Uncomment and edit this example.\n\
 # [[syncs]]\n# name = \"documents\"\n# local_dir = \"D:/Data/Documents\"\n\
-# remote_prefix = \"documents\"\n# mode = \"copy\"\n# exclude_extensions = \"tmp|png\"\n";
+# remote_prefix = \"documents\"\n# mode = \"copy\"\n# exclude_extensions = \"tmp|png\"\n\
+# exclude_dirs = '''\n# \\file\\logs\n# '''\n# exclude_files = '''\n# terminal.exe\n# '''\n";
     fs::write(&path, template).with_context(|| format!("write config {}", path.display()))?;
     Ok(path)
 }
@@ -191,5 +234,30 @@ exclude_extensions = 'tmp| .PNG '",
         assert!(!mapping.is_excluded("a.tmp/readme"));
         assert!(!mapping.is_excluded("doc.txt"));
         assert!(!mapping.is_excluded("tmp"));
+    }
+
+    #[test]
+    fn excludes_directories_and_file_names_including_subdirectories() {
+        let mapping: SyncMapping = toml::from_str(
+            "name = 'x'
+local_dir = 'D:/Data'
+mode = 'copy'
+exclude_dirs = '''
+\\file\\logs
+D:\\Data\\cache
+'''
+exclude_files = '''
+terminal.exe
+'''",
+        )
+        .unwrap();
+        assert!(mapping.is_excluded("file/logs/a.txt"));
+        assert!(mapping.is_excluded("File/Logs/sub/deep/a.txt"));
+        assert!(mapping.is_excluded("cache/x.bin"));
+        assert!(!mapping.is_excluded("file/logs2/a.txt"));
+        assert!(!mapping.is_excluded("other/file/logs/a.txt"));
+        assert!(mapping.is_excluded("terminal.exe"));
+        assert!(mapping.is_excluded("a/b/Terminal.exe"));
+        assert!(!mapping.is_excluded("a/terminal.exe.bak"));
     }
 }

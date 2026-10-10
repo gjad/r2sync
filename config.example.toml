@@ -17,5 +17,15 @@ name = "documents"
 local_dir = "D:/Data/Documents"
 remote_prefix = "documents"
 mode = "copy"
-# Optional: file extensions to skip, separated by "|" (case-insensitive, no dot). Applies to local and remote files.
+# Optional: file extensions to skip, separated by "|" (case-insensitive, no dot). Applies to files in all subdirectories, local and remote.
 # exclude_extensions = "tmp|png"
+# Optional: directories to skip including all subdirectories, one per line, relative to local_dir.
+# Use a literal multi-line string (''') so backslashes are kept as-is.
+# exclude_dirs = '''
+# \file\logs
+# \cache
+# '''
+# Optional: file names to skip in any directory (including subdirectories), one per line.
+# exclude_files = '''
+# terminal.exe
+# '''

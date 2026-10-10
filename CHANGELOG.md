@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- New optional `exclude_dirs` setting for each `[[syncs]]` entry: one directory per line (relative to `local_dir`, e.g. `\file\logs`); the directory and all its subdirectories are skipped.
+- New optional `exclude_files` setting: one file name per line (e.g. `terminal.exe`); matches files with that name in every subdirectory.
+- `exclude_extensions` is documented as applying to files in all subdirectories.
+
 ## 0.2.0
 
 ### Added

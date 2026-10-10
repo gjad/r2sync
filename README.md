@@ -28,7 +28,20 @@ remote_prefix = "documents"
 mode = "copy"
 ```
 
-Optionally add `exclude_extensions = "tmp|png"` to a `[[syncs]]` table to skip files with those extensions (separated by `|`, case-insensitive). Excluded files are neither uploaded, downloaded, nor deleted.
+Optionally add exclusion rules to a `[[syncs]]` table. Excluded files are neither uploaded, downloaded, nor deleted, and all matching is case-insensitive:
+
+```toml
+exclude_extensions = "tmp|png"   # extensions separated by "|"; applies in all subdirectories
+exclude_dirs = '''
+\file\logs
+\cache
+'''                              # one directory per line, relative to local_dir; includes all subdirectories
+exclude_files = '''
+terminal.exe
+'''                              # one file name per line; matches in every subdirectory
+```
+
+Use TOML literal multi-line strings (`'''`) so Windows backslashes are kept as written. `exclude_dirs` entries may also be absolute paths inside `local_dir`.
 
 `name` must be unique. `local_dir` is the local root; `remote_prefix` is the R2 key prefix (use `""` for the bucket root). Paths in TOML can use forward slashes on Windows. `mode` accepts `copy` or `sync`:
 

@@ -1,6 +1,6 @@
 [package]
 name = "r2sync"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "A small Cloudflare R2 sync CLI with AWS Signature Version 4"
 license = "MIT"
